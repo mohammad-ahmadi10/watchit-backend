@@ -1,0 +1,48 @@
+
+post = "/auth/register"         // register new user {username,email,password}
+get = "/auth/confirmation/id"       // {id=token as parameters}
+post = "/auth/login"            // login {emailusername,password,isEmail} 
+post = "/auth/device/login"     // login for device {emailusername,password,isEmail}
+get = "/auth/logout"           // logout
+get = "/auth/refresh"          // refresh token only on websites
+get = "/auth/me"              //  get all user information {token as httpOnly or as req.body}
+get = "/auth/avatar"          //  get avatar of the current user {token as httpOnly or as req.body}
+post = "/auth/resetconfirm"    // create reset-password url and sendet via email that is given  {email as req.body}                      
+post = "/auth/resetpassword"   // {newPassword, id=token as req.body} password will be reseted
+
+
+get = "/watch/"                     // get all videos back
+get = "/watch/myVideos"             // get all videos of the current sign in user 
+get = "/watch/download/id&resu"     // download a video. user should be signed in {id, resu as req.params}
+get = "/watch/download/mp3/id"      // download a mp3. user should be signed in {id:folderpath as req.params}
+get = "/watch/id&resu"              // watch a video {id , resu as req.params}
+get = "/watch/metdata/id"           // get all info corresponed with a video 
+get = "/watch/thumb/id"             // get the thumb of a vidoe 
+get = "/watch/thumbs/foldername&id" // used only on the first upload video. {foldername, id as req.params}
+
+
+put = "/video/view"                  // sum up the views {id as req.body}
+put = "/video/like"                  // like a video if user is signen in {id as req.body}
+put = "/video/unlike"                // unlike a video if user is signed in {id as req.body}
+put = "/video/comment"               // comment a video {token if not website, id , commentBody as req.body }
+put = "/video/uncomment"             // uncomment the comment {token if not website, commentID as req.body}
+get = "/video/comments/id"           // get all comments of a video {id as req.body}
+get = "/video/comment/answers/id"    // get all comments of a comment {id of the comment as req.body}
+put = "/video/comment/answer"        // asnwer a comment {token if not website, commentID, commentBody as req.body }
+put = "/video/comment/rmAnswer"      // remove the answer of a comment {token if not website, commentID, answerID as req.body}
+put = "/video/comment/like"          // like a comment {token if not website, commentID as req.body}
+put = "/video/comment/unlike"        // unlike a comment {token if not website, commentID as req.body}
+put = "video/comment/edit"           // edit a comment {token if not website, commentID, commentBody as req.body }
+get = "/video/searchpoint"           // get all video with a particular given search value {search as req.body}
+post = "/video/newPlaylist"          // add new playlist for a particular user {token if not website, playlistName as req.body}
+post = "/video/rmPlaylist"           // remove a playlist {token if not website, playlistName as req.body}
+post = "/video/addtoplaylist"        // add new video id to the give playlist {token if not website, playlistName, id as req.body} id=folderpath 
+post = "/video/rmfromplaylist"       // remove video from a playlist {token if not webiste, playlistName, id as req.body} id=folderpath
+get = "/video/myhistory"             // get all history of a user {token if not website} 
+
+
+post = "/upload/video"               // upload a new video {token if not website, file as req.formData}
+post = "/upload/avatar"              // upload a new avatar {token if not website, file as req.formData}
+post = "/upload/rmvideo"             // remove a video with all its infos {token if not website, id as req.body}
+post = "/upload/thumb"               // upload a thumb to a given video {vidoePath,titel,description,file as req.formData}
+
