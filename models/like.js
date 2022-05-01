@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const LikeSchema = new Schema({
     videoID:{type:String,default:"", required:true},
-    UserID:{type:mongoose.Types.ObjectId, required:true},
+    userID:{type:mongoose.Types.ObjectId, required:true},
 })
 
 const comment = mongoose.model("like", LikeSchema);

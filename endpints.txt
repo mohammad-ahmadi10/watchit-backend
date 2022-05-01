@@ -26,8 +26,8 @@ put = "/video/like"                  // like a video if user is signen in {id as
 put = "/video/unlike"                // unlike a video if user is signed in {id as req.body}
 put = "/video/comment"               // comment a video {token if not website, id , commentBody as req.body }
 put = "/video/uncomment"             // uncomment the comment {token if not website, commentID as req.body}
-get = "/video/comments/id"           // get all comments of a video {id as req.body}
-get = "/video/comment/answers/id"    // get all comments of a comment {id of the comment as req.body}
+get = "/video/comments/id"           // get all comments of a video {id as req.params}
+get = "/video/comment/answers/id"    // get all comments of a comment {id of the comment as req.params}
 put = "/video/comment/answer"        // asnwer a comment {token if not website, commentID, commentBody as req.body }
 put = "/video/comment/rmAnswer"      // remove the answer of a comment {token if not website, commentID, answerID as req.body}
 put = "/video/comment/like"          // like a comment {token if not website, commentID as req.body}
@@ -38,6 +38,7 @@ post = "/video/newPlaylist"          // add new playlist for a particular user {
 post = "/video/rmPlaylist"           // remove a playlist {token if not website, playlistName as req.body}
 post = "/video/addtoplaylist"        // add new video id to the give playlist {token if not website, playlistName, id as req.body} id=folderpath 
 post = "/video/rmfromplaylist"       // remove video from a playlist {token if not webiste, playlistName, id as req.body} id=folderpath
+get  = "/video/getplaylist"          // get all video in the given playlist {playlistName as req.params}
 get = "/video/myhistory"             // get all history of a user {token if not website} 
 
 

@@ -2,8 +2,9 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema;
 
 const HistorySchema = new Schema({
-    UserID:{type:mongoose.Types.ObjectId, required:true},
-    VideoID:{type:String,default:"", required:true},
+    userID:{type:mongoose.Types.ObjectId, required:true},
+    videoID:{type:String,default:"", required:true},
+    date:{type:Date, required:true}
 })
 
 const comment = mongoose.model("history", HistorySchema);

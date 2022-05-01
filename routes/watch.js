@@ -7,6 +7,26 @@ const { baseURL } = require('../utils/consts');
 const fs = require("fs");
 const Like = require("../models/like")
 const View = require("../models/view")
+const History = require("../models/history")
+const jwt = require("jsonwebtoken")
+
+const addToHistory = async (req, video) =>{
+    let token = req.cookies.ACTKEN;
+        if(!token) token = req.body.token;
+        if(token){
+            try {
+                const verified = jwt.verify(token , process.env.ACCESSTOKEN);
+                const id = verified._id;
+                const rs = await History.updateOne({userID:id,videoID:video.folderPath}, {
+                    userID:id,
+                    videoID:video.folderPath,
+                    $set:{date:Date.now()}
+                }, {upsert:true})
+            } catch (error) {
+                res.status(400).send("Invalid Token")
+            }
+        }
+}
 
 router 
 
@@ -20,12 +40,23 @@ router
         const user = await User.findOne({"_id":video.userID})
         return new Promise((resolve,reject) =>{
             resolve({id:video.folderPath,title:video.title,description:video.description,duration:video.duration,date:video.timestamp,resolutions:video.ratios,
-                     view:view.amoutn , username:user.username,userID:video.userID.toString()})
-
+                     view:view.amoutn , username:user.username,userID:video.userID.toString(), isActiveComment:video.isActiveComment})
         })
     })
     const modifiedVideos = await Promise.all(rs);
     res.json(modifiedVideos)
+})
+.get("/search_query/:search", async(req,res)=>{
+    const {search} = req.params;
+    const rs = await Video.aggregate([{
+        $match:{
+            title:{$regex:search},
+            active:true
+        }
+    },{ $project:{
+        title:1, folderPath:1 , userID:1,date:1,duration:1, 
+    }}])
+    return res.json(rs)
 })
 
 .get("/myVideos", verify(process.env.ACCESSTOKEN) ,async(req,res) =>{
@@ -74,16 +105,17 @@ router
     res.download(folderPath)
 })
 
-.get('/:id&:resu', async (req, res) => {
+.get('/:id&:resu',  async (req, res) => {
     const {id,resu} = req.params;
-
-
 
     if(typeof id === "undefined" || resu === "undefined") return res.stat(400).json({mssg:"no video found!"})
     let videoPath;
     const video = await Video.findOne({folderPath:id})
     if(video === null) return res.status(400).json("no video is found");
     if(!video.ratios.includes(resu)) return res.status(400).json({mssg:`only ${video.ratios} is available`})
+
+    // adding to history if user is signed in
+    addToHistory(req, video)
 
     videoPath = `${resu}.mp4`
     let filePath = path.join(baseURL, video.userID.toString(), id, videoPath)

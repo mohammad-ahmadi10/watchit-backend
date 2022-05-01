@@ -24,7 +24,7 @@ app.use(cors(corsOptions));
 const connect = async  () => {
   const conn = await connectDB();
   app.use("/auth" , require("./routes/auth"));
-  //app.use("/video" ,  require("./routes/videoRoute"));
+  app.use("/video" ,  require("./routes/videoRoute"));
   app.use("/upload" , require("./routes/upload"));
   app.use("/watch" , require("./routes/watch"));  
   app.use("/" , (_,res) => res.redirect("/watch"))
