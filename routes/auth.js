@@ -1,6 +1,14 @@
 const router = require('express').Router();
 const User = require("../models/user");
 const Verify = require("../models/verify");
+const Video = require("../models/video")
+const Like = require("../models/like")
+const Comment = require("../models/comment")
+const View = require("../models/view");
+const Playlist = require("../models/playlist")
+const History = require("../models/history");
+
+
 const path = require("path");
 const fs = require("fs");
 const {validate , ValidationError} = require("express-validation");
@@ -27,10 +35,11 @@ const validateErrorMessage = (err, req, res, next)  => {
 const transporter = nodemailer.createTransport({
       host:process.env.HOST,
       auth:{
-          user:process.env.USER,
+          user:process.env.EMAILUSER,
           pass:process.env.PASSWORD
       }
 })
+
 
 
 router 
@@ -63,10 +72,10 @@ router
             userID:newUser._id
         })
 
-        const url = `http:/192.168.188.52:8200/auth/confirmation/${emailToken}`
+        const url = `http://192.168.188.52:8200/auth/confirmation/${emailToken}`
         const options = 
             {
-                from:process.env.USER,
+                from:process.env.EMAILUSER,
                 to:newUser.email,
                 subject:'Confirm Email',
                 html:`Please click it to confirm your email: <a href=${url}>confirm</a><br>`
@@ -80,19 +89,53 @@ router
     }
 })
 
-.get("/confirmation/?:id" , async (req, res) =>{
+.post("/rmMe", verify(process.env.ACCESSTOKEN) , async(req,res)=>{
+    const {username} = req.body;
+    const userID = req.data._id;
+
+    const user = await User.deleteOne({"_id":userID, username:username})
+    if(!user) return res.status(400).json({mssg:"no user is found!"})
+
+    await Like.deleteMany({userID})
+    await History.deleteMany({userID})
+    await Comment.deleteMany({userID})
+    await Playlist.deleteMany({userID})
+    
+    const videos = await Video.find({userID})
+    videos.forEach(async(v)=>{
+        await View.deleteOne({videoID:v.folderPath})
+    })
+    await Video.deleteMany({userID})
+
+    // remove folders
+    const folderDirectory = path.join(baseURL, userID)
+    try {
+        if (fs.existsSync(folderDirectory)) {
+          fs.rm(folderDirectory , {recursive:true}, (err) =>{
+              console.log(err)
+          });
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    res.json("user is successfully deleted!")
+})
+
+.get("/confirmation/:id" , async (req, res) =>{
      const id = req.params.id 
+
 
      if(typeof id === 'undefined') return res.status(400).json({mssg:"no user with this token is found!"})
      try {
-         const rs = await JWT.verify(id, process.env.EMAILTOKEN);
+         const rs = JWT.verify(id, process.env.EMAILTOKEN);       
+
          const user = await User.findOne({"_id":rs._id})
          if(user.active) return res.status(403).send("your Email is already confirmed!<br> "+
                                                         "go to Login page! <a href='http://192.168.188.52:3000/login'>Login</a> ")     
-        await User.updateOne({id} , {
+        await User.updateOne({"_id":rs._id} , {
             $set:{"active":true}
         })
-        await Verify.deleteOne({userID:id})
+        await Verify.deleteOne({userID:rs._id})
         res.status(200).send("Confirmation was sucessfull! go to Login page! <a href='http://192.168.188.52:3000/login'>Login</a>")
 
      } catch (error) {
@@ -104,11 +147,10 @@ router
 
 .post("/login" /* , validate(loginValidate , {}, {}) */ , async (req , res) =>{
     const {emailusername , password , isEmail } = req.body; 
-    // check if the user is already in the database    
-    const user = isEmail ? 
-              await User.findOne({email:emailusername})
-            : await User.findOne({username:emailusername})
-        
+    // check if the user is already in the database  
+    const user = isEmail === "true" ? await User.findOne({email:emailusername}) : 
+                                    await User.findOne({username:emailusername})
+
         if(!user) return res.status(403).json("Email or Username or Password is wrong");
         if(!user.active) return res.status(403).json({mssg:"please confirm your email"})
         
@@ -129,10 +171,14 @@ router
             logedIn: true
         }
         
-    await User.updateOne({email:emailusername} , {
-        $push: {"refreshToken":[refreshtoken]}
-    })
-               
+        isEmail === "true" ? 
+        await User.updateOne({email:emailusername} , {
+            $push: {"refreshToken":[refreshtoken]}
+        })
+        : 
+        await User.updateOne({username:emailusername} , {
+            $push: {"refreshToken":[refreshtoken]}
+        })    
 
 
     res.status(200).cookie(refreshTokenName , refreshtoken , 
@@ -153,8 +199,7 @@ router
 
 .post("/device/login", async (req,res) =>{
     const {emailusername , password , isEmail } = req.body; 
-
-    const user = isEmail ? 
+    const user = isEmail === "true"  ? 
               await User.findOne({email:emailusername})
             : await User.findOne({username:emailusername})
         if(!user) return res.status(403).json("Email or Username or Password is wrong");
@@ -175,7 +220,12 @@ router
             logedIn: true
         }
         
+        isEmail === "true" ? 
         await User.updateOne({email:emailusername} , {
+            $push: {"refreshToken":[refreshtoken]}
+        })
+        : 
+        await User.updateOne({username:emailusername} , {
             $push: {"refreshToken":[refreshtoken]}
         })
 
@@ -286,10 +336,10 @@ router
     })
     
 
-    const url = `http://localhost:3000/reset-password/${emailToken}`
+    const url = `${process.env.FRONTEND}/reset-password/${emailToken}`
     const options = 
         {   
-            from:process.env.USER,
+            from:process.env.EMAILUSER,
             to:email,
             subject:'Reset password',
             html:`Please click it to reset your password: <a href=${url}>Reset my Password</a><br>`

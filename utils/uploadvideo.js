@@ -23,7 +23,8 @@ const uploadvideo =  async({userID , videoData}) =>{
         "folderPath": folder,
         "duration": duration,
         "timestamp": videoData.vidoeInfos.timestamp,
-        "userID": userID
+        "userID": userID,
+        "date":Date.now()
     });
     await View.create({
         videoID:result.folderPath

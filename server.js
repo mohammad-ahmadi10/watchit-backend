@@ -11,7 +11,7 @@ const PORT = 8200 | process.env.PORT;
 
  /* "http://192.168.188.52:3000" */
  const corsOptions = {
-  origin: ["*"/* 'http://192.168.188.52:3000', 'http://localhost:3000' */],
+  origin: ['http://192.168.188.52:3000', 'http://localhost:3000'],
   credentials:true
 }  
 
@@ -28,7 +28,6 @@ const connect = async  () => {
   app.use("/upload" , require("./routes/upload"));
   app.use("/watch" , require("./routes/watch"));  
   app.use("/" , (_,res) => res.redirect("/watch"))
-
   app.listen(PORT, () =>{console.log(`server is listening at port ${PORT}`)})
 }
 
