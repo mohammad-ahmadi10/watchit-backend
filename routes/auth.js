@@ -20,17 +20,9 @@ const bcrypt = require('bcryptjs');
 const JWT = require("jsonwebtoken");
 const verify = require("../utils/middleware/verifyToken");
 const verifyRefreshToken = require("../utils/middleware/VerifyRefreshToken");
-const {refreshTokenName , refreshTokenTime,
-       accessTokenName ,  tokenTime, baseURL
-}  = require("../utils/consts");
+const {baseURL}  = require("../utils/consts");
 
 
-const validateErrorMessage = (err, req, res, next)  => {
-    const errorMessg = err.details.body[0].message;
-    if (err instanceof ValidationError) { 
-      return res.status(err.statusCode).json(errorMessg)
-    }
-}
 
 const transporter = nodemailer.createTransport({
       host:process.env.HOST,
@@ -43,7 +35,7 @@ const transporter = nodemailer.createTransport({
 
 
 router 
-.post("/register" , /* validate(registerValidate, {}, {}) , */    async ( req , res) =>{
+.post("/register" ,   async ( req , res) =>{
     const {username , email , password } = req.body;
     // check if the user is already in the database
     const emailExist = await User.findOne({email})
@@ -72,7 +64,7 @@ router
             userID:newUser._id
         })
 
-        const url = `http://192.168.188.52:8200/auth/confirmation/${emailToken}`
+        const url = `${process.env.APIIP}/auth/confirmation/${emailToken}`
         const options = 
             {
                 from:process.env.EMAILUSER,
@@ -145,10 +137,10 @@ router
      
  })
 
-.post("/login" /* , validate(loginValidate , {}, {}) */ , async (req , res) =>{
+.post("/login" , async (req , res) =>{
     const {emailusername , password , isEmail } = req.body; 
     // check if the user is already in the database  
-    const user = isEmail === "true" ? await User.findOne({email:emailusername}) : 
+    const user = isEmail === "true" || isEmail === true ? await User.findOne({email:emailusername}) : 
                                     await User.findOne({username:emailusername})
 
         if(!user) return res.status(403).json("Email or Username or Password is wrong");
@@ -163,15 +155,16 @@ router
         const accessToken = JWT.sign({_id:user._id} , process.env.ACCESSTOKEN , {
             expiresIn: "900s"
         })
-        const refreshtoken = await JWT.sign({_id:user._id} , process.env.REFRESHTOKEN , {
+        const refreshtoken = JWT.sign({_id:user._id} , process.env.REFRESHTOKEN , {
             expiresIn: "90d"
         })    
         const response = {
             user:{id:user._id , username:user.username, email:user.email},
-            logedIn: true
+            logedIn: true, 
+            tokens:{ACTKEN:accessToken, SSRFSH:refreshtoken }
         }
         
-        isEmail === "true" ? 
+        isEmail === "true" || isEmail === true? 
         await User.updateOne({email:emailusername} , {
             $push: {"refreshToken":[refreshtoken]}
         })
@@ -181,7 +174,7 @@ router
         })    
 
 
-    res.status(200).cookie(refreshTokenName , refreshtoken , 
+    /* res.status(200).cookie(refreshTokenName , refreshtoken , 
     {   sameSite:'strict' , 
         httpOnly:true , 
         path:"/",
@@ -192,14 +185,15 @@ router
         httpOnly:true , 
         path:"/",
         expires:new Date(new Date().getTime() + tokenTime),
-    })
-    .json(response)
+    }) */
+
+    res.json(response)
 })
 
 
 .post("/device/login", async (req,res) =>{
     const {emailusername , password , isEmail } = req.body; 
-    const user = isEmail === "true"  ? 
+    const user = isEmail === "true" || isEmail === true  ? 
               await User.findOne({email:emailusername})
             : await User.findOne({username:emailusername})
         if(!user) return res.status(403).json("Email or Username or Password is wrong");
@@ -212,15 +206,16 @@ router
         // CREATE and assign a token & refreshToken
         const accessToken = JWT.sign({_id:user._id} , process.env.ACCESSTOKEN , {
         })
-        const refreshtoken = await JWT.sign({_id:user._id} , process.env.REFRESHTOKEN , {
+        const refreshtoken = JWT.sign({_id:user._id} , process.env.REFRESHTOKEN , {
             expiresIn: "90d"
         })    
         const response = {
             user:{id:user._id , username:user.username, email:user.email},
-            logedIn: true
+            logedIn: true, 
+            accessToken
         }
         
-        isEmail === "true" ? 
+        isEmail === "true"  || isEmail === true? 
         await User.updateOne({email:emailusername} , {
             $push: {"refreshToken":[refreshtoken]}
         })
@@ -229,7 +224,7 @@ router
             $push: {"refreshToken":[refreshtoken]}
         })
 
-    res.json({user:response, token:accessToken})
+    res.json({user:response})
   })
 
 .get("/logout" , verify(process.env.ACCESSTOKEN) , async (req , res) =>{
@@ -241,7 +236,7 @@ router
         $set: {"refreshToken":[]}
     })
 
-    res.status(200).cookie(refreshTokenName , "" , 
+    /* res.status(200).cookie(refreshTokenName , "" , 
         {   sameSite:'strict' , 
             httpOnly:true , 
             path:"/",
@@ -252,9 +247,8 @@ router
             httpOnly:true , 
             path:"/",
             expires:new Date(new Date().getTime() ),
-        })
-        .json({mssg:"successfully logout"})
-
+        }) */
+        res.json({mssg:"successfully logout"})
 })
 
 .get("/refresh" , verifyRefreshToken(process.env.REFRESHTOKEN) ,  async(req , res) =>{
@@ -265,21 +259,21 @@ router
     const user =  await User.findOne({id});
     if(!user.refreshToken.includes(refreshtoken))
         res.status(403).json({message: "Invalid refresh Token"})
-
     try {
         const {_id} = JWT.verify(refreshtoken , process.env.REFRESHTOKEN);
         
-        const accessToken = await JWT.sign(
+        const accessToken = JWT.sign(
             {_id},
             process.env.ACCESSTOKEN,
             {expiresIn:"900s"}
         )
-        res.status(200).cookie( accessTokenName , accessToken , 
+        /* res.status(200).cookie( accessTokenName , accessToken , 
         {   sameSite:'strict' , 
             httpOnly:true , 
             path:"/",
             expires:new Date(new Date().getTime() + tokenTime),
-        }).json({messgae:"Token is refreshed"})
+        }) */
+        res.json({messgae:"Token is refreshed", accessToken})
 
 
 

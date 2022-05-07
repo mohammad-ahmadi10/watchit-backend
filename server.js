@@ -4,7 +4,6 @@ const app = express();
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const connectDB = require("./db/connection");
-const cookieParser = require('cookie-parser')
 const compression = require("compression");
 
 const PORT = 8200 | process.env.PORT;
@@ -17,7 +16,6 @@ const PORT = 8200 | process.env.PORT;
 
 app.use(compression())
 app.use(bodyParser.json(bodyParser.urlencoded({extended:true})));
-app.use(cookieParser());
 app.use(cors(corsOptions));
 
 
