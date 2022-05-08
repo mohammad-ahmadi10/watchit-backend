@@ -5,14 +5,18 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 const connectDB = require("./db/connection");
 const compression = require("compression");
+const helmet = require("helmet");
 
 const PORT = 8200 | process.env.PORT;
 
  /* "http://192.168.188.52:3000" */
  const corsOptions = {
   origin: ['http://192.168.188.52:3000', 'http://localhost:3000'],
-  credentials:true
 }  
+
+app.use(helmet({
+  crossOriginResourcePolicy: false
+}))
 
 app.use(compression())
 app.use(bodyParser.json(bodyParser.urlencoded({extended:true})));

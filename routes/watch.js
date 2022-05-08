@@ -11,8 +11,10 @@ const History = require("../models/history")
 const jwt = require("jsonwebtoken")
 
 const addToHistory = async (req, video) =>{
-    let token = req.cookies.ACTKEN;
-        if(!token) token = req.body.token;
+        let token ;
+        if(typeof req.headers.authorization !== "undefined"){
+            token = req.headers.authorization.split(" ")[1]
+        }
         if(token){
             try {
                 const verified = jwt.verify(token , process.env.ACCESSTOKEN);
@@ -32,7 +34,6 @@ router
 
 .get("/thumb/:id", async(req,res) =>{
     const {id} = req.params;
-console.log("test")
 const video = await Video.findOne({folderPath:id})
 if(video === null) return res.status(400).json("no video with given id!")
 const thumbPath = path.join(baseURL, video.userID.toString(), id, "thumbnails");
