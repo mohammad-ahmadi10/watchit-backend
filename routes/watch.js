@@ -30,7 +30,19 @@ const addToHistory = async (req, video) =>{
 
 router 
 
-.get("/", async(req,res) =>{
+.get("/thumb/:id", async(req,res) =>{
+    const {id} = req.params;
+console.log("test")
+const video = await Video.findOne({folderPath:id})
+if(video === null) return res.status(400).json("no video with given id!")
+const thumbPath = path.join(baseURL, video.userID.toString(), id, "thumbnails");
+const thumb = fs.readdirSync(thumbPath)[0]
+const fsReadStream = fs.createReadStream(path.join(thumbPath, thumb))
+fsReadStream.pipe(res)
+})
+
+
+.get("/", verify(process.env.ACCESSTOKEN), async(req,res) =>{
     const videos = await Video.aggregate([
         {$match:{active:true}},
         {$sample:{size:10}}
@@ -219,16 +231,6 @@ router
         res.json(modifiedVideo)
     })
     
-    .get("/thumb/:id", async(req,res) =>{
-        const {id} = req.params;
-    console.log(id)
-    const video = await Video.findOne({folderPath:id})
-    if(video === null) return res.status(400).json("no video with given id!")
-    const thumbPath = path.join(baseURL, video.userID.toString(), id, "thumbnails");
-    const thumb = fs.readdirSync(thumbPath)[0]
-    const fsReadStream = fs.createReadStream(path.join(thumbPath, thumb))
-    fsReadStream.pipe(res)
-})
 
 .get("/thumbs/:id&:index", verify(process.env.ACCESSTOKEN) , async (req,res) =>{
     const {id,index} = req.params;
