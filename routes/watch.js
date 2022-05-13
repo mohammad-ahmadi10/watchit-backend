@@ -43,7 +43,7 @@ fsReadStream.pipe(res)
 })
 
 
-.get("/", verify(process.env.ACCESSTOKEN), async(req,res) =>{
+.get("/", /* verify(process.env.ACCESSTOKEN), */ async(req,res) =>{
     const videos = await Video.aggregate([
         {$match:{active:true}},
         {$sample:{size:10}}
@@ -221,7 +221,9 @@ fsReadStream.pipe(res)
 .get("/metadata/:id", async(req,res) =>{
     const {id} = req.params;
     
-    const video = await Video.findOne({videoID:id})
+    const video = await Video.findOne({folderPath:id})
+    if(!video) return res.status(400).json({mssg:"no video is found!"})
+
     const modifiedVideo = await (new Promise(async(resolve,reject) =>{
         const view = await View.findOne({videoID:video.folderPath})
         const user = await User.findOne({"_id":video.userID})
@@ -233,7 +235,7 @@ fsReadStream.pipe(res)
     })
     
 
-.get("/thumbs/:id&:index", verify(process.env.ACCESSTOKEN) , async (req,res) =>{
+.get("/thumbs/:id&:index" , async (req,res) =>{
     const {id,index} = req.params;
     
     const video = await Video.findOne({folderPath:id})
@@ -242,10 +244,15 @@ fsReadStream.pipe(res)
     if(index >3) return res.status(400).json({mssg:"only got 4 thumbs"})
     
     const thumb = fs.readdirSync(thumbPath)[index]
-    
-    const fsReadStream = fs.createReadStream(path.join(thumbPath, thumb))
+    let fsReadStream;
+    if(!thumb) {
+        fsReadStream = fs.createReadStream(path.join("./" , "static" , "noimage.png"))
+    }else{
+        fsReadStream = fs.createReadStream(path.join(thumbPath, thumb))
+    }
     fsReadStream.pipe(res)
 })
+
 
 .get('/:id/:resu',  async (req, res) => {
     const {id,resu} = req.params;

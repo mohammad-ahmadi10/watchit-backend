@@ -79,6 +79,41 @@ const getUpload = async () =>{
        searchPointsunt
        file
      */
+    .post("/thumb/index", verify(process.env.ACCESSTOKEN) ,  (req, res, next) =>{
+      const {index, videoPath} = req.body;
+      const userID = req.data._id;
+      const thumb = `thumbnail_${index}.jpg`;
+      const thumbfolder =  path.join(baseURL , userID.toString() , videoPath , "thumbnails");
+      const folderPath = path.join(baseURL , userID.toString() , videoPath)
+      req.body = {...req.body, thumb , thumbfolder,folderPath}
+      next();
+    } , emptyThumbDir() , async (req, res, next) =>{
+      
+      const {videoPath , title, description , folderPath, thumb} = req.body;
+      const userID = req.data._id;
+      const rs = await Video.findOne({folderPath:videoPath})
+        if(rs === null) return res.status(400).json({mssg:"no video is found!"});
+        if(userID !== rs.userID.toString()) return res.status(400).json({mssg:"you are not allowed to edit this video"})
+          
+        const r = await Video.updateOne({folderPath:videoPath}, {
+            $set:{
+            "title":title, 
+            "description":description
+        }
+      })
+
+        const data = {userID , folderPath , videoname: rs.videoname, videoPath }
+        const metadata = await  getVideoResu(data)
+        const {coded_width , coded_height} = metadata.streams[0]
+        const {result , mssg} = await createVideos(coded_width , coded_height ,
+                                          data);
+        res.status(200).json({thumb})
+    })
+
+
+
+
+
     .post("/thumb" ,  verify(process.env.ACCESSTOKEN) , thumbUploader.fields([     {name:'videoPath', maxCount:1}, 
                                                                                    {name:'titel', maxCount:1}, 
                                                                                    {name:'description', maxCount:1},

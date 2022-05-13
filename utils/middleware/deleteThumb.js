@@ -5,6 +5,7 @@ const { baseURL } = require('../consts');
 const emptyThumbDir = () =>{
     return  ( req , res , next) =>{
         const {thumb} = req.body;
+
         const thumbfolder = req.body.thumbfolder;
         const files = fs.readdirSync(thumbfolder);
         
