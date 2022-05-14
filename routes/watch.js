@@ -243,8 +243,16 @@ fsReadStream.pipe(res)
     const thumbPath = path.join(baseURL, video.userID.toString(), id, "thumbnails");
     if(index >3) return res.status(400).json({mssg:"only got 4 thumbs"})
     
-    const thumb = fs.readdirSync(thumbPath)[index]
+
     let fsReadStream;
+    // if only 1 thumb exist then send it and do nothing more
+    const thumbs = fs.readdirSync(thumbPath)
+    if(thumbs.length === 1) {
+        fsReadStream = fs.createReadStream(path.join(thumbPath, thumbs[0]))
+        return fsReadStream.pipe(res)
+    }
+
+    const thumb = fs.readdirSync(thumbPath)[index]
     if(!thumb) {
         fsReadStream = fs.createReadStream(path.join("./" , "static" , "noimage.png"))
     }else{

@@ -88,7 +88,6 @@ const getUpload = async () =>{
       req.body = {...req.body, thumb , thumbfolder,folderPath}
       next();
     } , emptyThumbDir() , async (req, res, next) =>{
-      
       const {videoPath , title, description , folderPath, thumb} = req.body;
       const userID = req.data._id;
       const rs = await Video.findOne({folderPath:videoPath})

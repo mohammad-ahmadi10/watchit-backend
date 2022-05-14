@@ -8,7 +8,7 @@ const emptyThumbDir = () =>{
 
         const thumbfolder = req.body.thumbfolder;
         const files = fs.readdirSync(thumbfolder);
-        
+        if(files.length === 1) return   next();       
         for(const file of files){
             if(file === thumb) continue;
             fs.unlinkSync(path.join(thumbfolder , file));
